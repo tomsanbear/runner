@@ -166,19 +166,32 @@ namespace GitHub.Runner.Worker.Handlers
 
             var tempDirectory = HostContext.GetDirectory(WellKnownDirectory.Temp);
 
-            // Resolve steps
-            var target = Data.Steps;
-            if (target == null) {
+            // Resolve action steps
+            var actionSteps = Data.Steps;
+
+            // if (Data.Steps == )
+            if (actionSteps == null) {
                 Trace.Error("Data.Steps in CompositeActionHandler is null");
             } else {
-                Trace.Info($"Data Steps Value for Composite Actions is: {target}.");
+                Trace.Info($"Data Steps Value for Composite Actions is: {actionSteps}.");
             }
 
+            // For each action step, we call ActionRunner::RunAsync()
+            foreach (Pipelines.ActionStep aStep in actionSteps) 
+            {
+                
+            }
 
-            // For now, just assume it is 1 Run step
-            // We will adapt this in the future. 
-            // Copied from ActionRunner.cs RunAsync() function => Maybe we don't need a handler and need to avoid this preplicatoin in the future?
-            var runStepInputs = target[0].Inputs;
+            // How do we stop the recursion? => (if the for loop doesn't run)
+            // How do we get the correct runValue?
+            // Data.Steps would be different, right?
+            // => It should just be Step not a list of steps 
+            // ^ Or we could just have another attribute to say the Steps is only 1 step!!
+            // ^ Maybe the attribute could be called "End"
+
+
+            var runValue = "";
+            var runStepInputs = actionSteps;
             if (runStepInputs == null) {
                 Trace.Error("runStepInputs in CompositeActionHandler is null");
             } else {
@@ -188,29 +201,15 @@ namespace GitHub.Runner.Worker.Handlers
             var inputs = templateEvaluator.EvaluateStepInputs(runStepInputs, ExecutionContext.ExpressionValues, ExecutionContext.ExpressionFunctions);
             var taskManager = HostContext.GetService<IActionManager>();
 
-            var userInputs = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-            var runValue = "";
             foreach (KeyValuePair<string, string> input in inputs)
             {
-                userInputs.Add(input.Key);
-                userInputs.Add(input.Value);
+                // userInputs.Add(input.Key);
+                // userInputs.Add(input.Value);
                 Trace.Info($"Composite Action Handler. Key: {input.Key} Value: {input.Value}");
-                // Why is the key should not be "run" => because the "run" keyword is recorgnized as something that will be a "script"?
-                // Or should we create another key that delineates between "script" and "run"?
-                // ^ Perhaps we can explore this in the next version with the changes the to action.yaml template
                 if (input.Key.Equals("script"))
                 {
                     runValue = input.Value;
                 }
-
-                // string message = "";
-                // if (definition.Data?.Deprecated?.TryGetValue(input.Key, out message) == true)
-                // {
-                //     ExecutionContext.Warning(String.Format("Input '{0}' has been deprecated with message: {1}", input.Key, message));
-                // }
-
-                // Get the run bash value that we want to run
-                // In the future, we would apply and validate the template => maybe using the manifest manager to recursively load the json schema.
             }
 
             Trace.Info($"Run Value for Composite Actions is: {runValue}.");
@@ -230,18 +229,6 @@ namespace GitHub.Runner.Worker.Handlers
             // {
             //     ExecutionContext.Warning($"Unexpected input(s) '{string.Join("', '", unexpectedInputs)}', valid inputs are ['{string.Join("', '", validInputs)}']");
             // }
-
-
-            //TODO:
-            // 6/11/20 EOD thoughts
-            // => What functions do I need to use from ScriptHandlerHelpers.cs?
-            // Do I need to Reverse the string for prepending the path??
-            //      ^ why or why not?
-            // How do I process the Inputs?
-            //      => It's a TemplateToken
-            // How do I incorporate Async? we call the StepHost for Async when you call ExecuteAsync()
-
-            // Detect operating system for fileName + arguments
 
             var contents = runValue ?? string.Empty;
 
