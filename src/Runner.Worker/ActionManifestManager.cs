@@ -321,6 +321,7 @@ namespace GitHub.Runner.Worker
             // returns a MappingToken
             // var stepsToken = default(SequenceToken);
             var stepsLoaded = default(List<ActionStep>);
+
             // It should be a array (aka sequence)
 
             foreach (var run in runsMapping)
@@ -444,7 +445,7 @@ namespace GitHub.Runner.Worker
                     {
                         return new CompositeActionExecutionData()
                         {
-                            Steps = stepsLoaded
+                            Steps = stepsLoaded,
                         };
                     }
                 }

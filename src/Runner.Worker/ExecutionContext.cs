@@ -70,9 +70,6 @@ namespace GitHub.Runner.Worker
 
         bool EchoOnActionCommand { get; set; }
 
-        // Retrieve Corresponding ActionRunner
-        public IActionRunner CurrentActionRunner { get; set; }
-
         // Initialize
         void InitializeJob(Pipelines.AgentJobRequestMessage message, CancellationToken token);
         void CancelToken();
@@ -171,10 +168,6 @@ namespace GitHub.Runner.Worker
         public HashSet<Guid> StepsWithPostRegistered { get; private set; }
 
         public bool EchoOnActionCommand { get; set; }
-
-        // Retrieve Corresponding ActionRunner
-        public IActionRunner CurrentActionRunner { get; set; }
-
 
         public TaskResult? Result
         {
