@@ -169,7 +169,7 @@ namespace GitHub.Runner.Worker.Handlers
             // Resolve action steps
             var actionSteps = Data.Steps;
 
-            // if (Data.Steps == )
+            // if (Data.End == True)
             if (actionSteps == null) {
                 Trace.Error("Data.Steps in CompositeActionHandler is null");
             } else {
@@ -177,18 +177,23 @@ namespace GitHub.Runner.Worker.Handlers
             }
 
             // For each action step, we call ActionRunner::RunAsync()
+            // How do we get the correct instance of the ActionRunner tho.
+            // ^ We can just pass it to our ExecutionContext!!
             foreach (Pipelines.ActionStep aStep in actionSteps) 
             {
-                
+                await ExecutionContext.CurrentActionRunner.RunAsync();
+                // ExecutionContext.R
+                // await ActionRunner.RunAsync();
             }
 
             // How do we stop the recursion? => (if the for loop doesn't run)
             // How do we get the correct runValue?
             // Data.Steps would be different, right?
             // => It should just be Step not a list of steps 
-            // ^ Or we could just have another attribute to say the Steps is only 1 step!!
-            // ^ Maybe the attribute could be called "End"
-
+            // ^ Or we could just have another attribute to say the Steps is only 1 step or is empty?!!
+            // ^ Maybe the attribute could be called "End" => but couldn't we just check the size of the .Steps?
+            // We really need to consider the case when we get the individual Step. 
+            // ^ Oh wait, this doesn't make sense ActionManifestManager::ConvertRuns is not run since it will just see "run" instead of "runs"
 
             var runValue = "";
             var runStepInputs = actionSteps;

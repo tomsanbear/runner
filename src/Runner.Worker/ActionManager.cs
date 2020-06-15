@@ -1289,6 +1289,8 @@ namespace GitHub.Runner.Worker
 
         public List<Pipelines.ActionStep> Steps {get; set;}
 
+        // Could I add a reference to the ActionRunner we are using here?
+
         // public string Script { get; set; }
 
         // public string Pre { get; set; }

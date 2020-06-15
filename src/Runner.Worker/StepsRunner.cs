@@ -322,6 +322,10 @@ namespace GitHub.Runner.Worker
 
             try
             {
+                // TODO: pass action runner here. 
+                if (step is IActionRunner actionRunner2) {
+                    step.ExecutionContext.CurrentActionRunner = step as IActionRunner;
+                }
                 await step.RunAsync();
             }
             catch (OperationCanceledException ex)
