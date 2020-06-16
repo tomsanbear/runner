@@ -143,7 +143,7 @@ namespace GitHub.Runner.Worker.Handlers
             ExecutionContext.Output("##[endgroup]");
         }
 
-        public async Task RunAsync(ActionRunStage stage)
+        public Task RunAsync(ActionRunStage stage)
         {
             // Basically, the only difference from ScriptHandler.cs is that "contents" is not just each step under "run: "
             // It might make more sense to:
@@ -236,6 +236,9 @@ namespace GitHub.Runner.Worker.Handlers
 
             // Do we need to run anything here below?
 
+            // TODO: Figure out what to return below 
+            // We don't have to do anything because we leave it to the job runner
+            return Task.CompletedTask;
 
 
 
@@ -250,211 +253,211 @@ namespace GitHub.Runner.Worker.Handlers
 
 
 
-            // OUTDATED COMMENTS:
-            // How do we stop the recursion? => (if the for loop doesn't run)
-            // How do we get the correct runValue?
-            // Data.Steps would be different, right?
-            // => It should just be Step not a list of steps 
-            // ^ Or we could just have another attribute to say the Steps is only 1 step or is empty?!!
-            // ^ Maybe the attribute could be called "End" => but couldn't we just check the size of the .Steps?
-            // We really need to consider the case when we get the individual Step. 
-            // ^ Oh wait, this doesn't make sense ActionManifestManager::ConvertRuns is not run since it will just see "run" instead of "runs"
-            // Then what is called when we process each step? if ConvertRuns is not called
-            // ^
-            var runValue = "";
-            if (runStepInputs == null)
-            {
-                Trace.Error("runStepInputs in CompositeActionHandler is null");
-            }
-            else
-            {
-                Trace.Info($"runStepInputs Value for Composite Actions is: {runStepInputs}.");
-            }
-            var templateEvaluator = ExecutionContext.ToPipelineTemplateEvaluator();
-            var inputs = templateEvaluator.EvaluateStepInputs(runStepInputs, ExecutionContext.ExpressionValues, ExecutionContext.ExpressionFunctions);
-            var taskManager = HostContext.GetService<IActionManager>();
+//             // OUTDATED COMMENTS:
+//             // How do we stop the recursion? => (if the for loop doesn't run)
+//             // How do we get the correct runValue?
+//             // Data.Steps would be different, right?
+//             // => It should just be Step not a list of steps 
+//             // ^ Or we could just have another attribute to say the Steps is only 1 step or is empty?!!
+//             // ^ Maybe the attribute could be called "End" => but couldn't we just check the size of the .Steps?
+//             // We really need to consider the case when we get the individual Step. 
+//             // ^ Oh wait, this doesn't make sense ActionManifestManager::ConvertRuns is not run since it will just see "run" instead of "runs"
+//             // Then what is called when we process each step? if ConvertRuns is not called
+//             // ^
+//             var runValue = "";
+//             if (runStepInputs == null)
+//             {
+//                 Trace.Error("runStepInputs in CompositeActionHandler is null");
+//             }
+//             else
+//             {
+//                 Trace.Info($"runStepInputs Value for Composite Actions is: {runStepInputs}.");
+//             }
+//             var templateEvaluator = ExecutionContext.ToPipelineTemplateEvaluator();
+//             var inputs = templateEvaluator.EvaluateStepInputs(runStepInputs, ExecutionContext.ExpressionValues, ExecutionContext.ExpressionFunctions);
+//             var taskManager = HostContext.GetService<IActionManager>();
 
-            // TODO: Support more than running a simple script
-            // Right now, we are only supporting a simple run statement
-            foreach (KeyValuePair<string, string> input in inputs)
-            {
-                // userInputs.Add(input.Key);
-                // userInputs.Add(input.Value);
-                Trace.Info($"Composite Action Handler. Key: {input.Key} Value: {input.Value}");
-                if (input.Key.Equals("script"))
-                {
-                    runValue = input.Value;
-                }
-            }
+//             // TODO: Support more than running a simple script
+//             // Right now, we are only supporting a simple run statement
+//             foreach (KeyValuePair<string, string> input in inputs)
+//             {
+//                 // userInputs.Add(input.Key);
+//                 // userInputs.Add(input.Value);
+//                 Trace.Info($"Composite Action Handler. Key: {input.Key} Value: {input.Value}");
+//                 if (input.Key.Equals("script"))
+//                 {
+//                     runValue = input.Value;
+//                 }
+//             }
 
-            Trace.Info($"Run Value for Composite Actions is: {runValue}.");
+//             Trace.Info($"Run Value for Composite Actions is: {runValue}.");
 
-            // Let's think about validating inputs later
-            // Validate inputs only for actions with action.yml
-            // var unexpectedInputs = new List<string>();
-            // foreach (var input in userInputs)
-            // {
-            //     if (!validInputs.Contains(input))
-            //     {
-            //         unexpectedInputs.Add(input);
-            //     }
-            // }
+//             // Let's think about validating inputs later
+//             // Validate inputs only for actions with action.yml
+//             // var unexpectedInputs = new List<string>();
+//             // foreach (var input in userInputs)
+//             // {
+//             //     if (!validInputs.Contains(input))
+//             //     {
+//             //         unexpectedInputs.Add(input);
+//             //     }
+//             // }
 
-            // if (unexpectedInputs.Count > 0)
-            // {
-            //     ExecutionContext.Warning($"Unexpected input(s) '{string.Join("', '", unexpectedInputs)}', valid inputs are ['{string.Join("', '", validInputs)}']");
-            // }
+//             // if (unexpectedInputs.Count > 0)
+//             // {
+//             //     ExecutionContext.Warning($"Unexpected input(s) '{string.Join("', '", unexpectedInputs)}', valid inputs are ['{string.Join("', '", validInputs)}']");
+//             // }
 
-            var contents = runValue ?? string.Empty;
+//             var contents = runValue ?? string.Empty;
 
-            string workingDirectory = null;
-            if (!Inputs.TryGetValue("workingDirectory", out workingDirectory))
-            {
-                // TODO: figure out how defaults interact with template later
-                // for now, we won't check job.defaults if we are inside a template.
-                if (string.IsNullOrEmpty(ExecutionContext.ScopeName) && ExecutionContext.JobDefaults.TryGetValue("run", out var runDefaults))
-                {
-                    if (runDefaults.TryGetValue("working-directory", out workingDirectory))
-                    {
-                        ExecutionContext.Debug("Overwrite 'working-directory' base on job defaults.");
-                    }
-                }
-            }
-            var workspaceDir = githubContext["workspace"] as StringContextData;
-            workingDirectory = Path.Combine(workspaceDir, workingDirectory ?? string.Empty);
+//             string workingDirectory = null;
+//             if (!Inputs.TryGetValue("workingDirectory", out workingDirectory))
+//             {
+//                 // TODO: figure out how defaults interact with template later
+//                 // for now, we won't check job.defaults if we are inside a template.
+//                 if (string.IsNullOrEmpty(ExecutionContext.ScopeName) && ExecutionContext.JobDefaults.TryGetValue("run", out var runDefaults))
+//                 {
+//                     if (runDefaults.TryGetValue("working-directory", out workingDirectory))
+//                     {
+//                         ExecutionContext.Debug("Overwrite 'working-directory' base on job defaults.");
+//                     }
+//                 }
+//             }
+//             var workspaceDir = githubContext["workspace"] as StringContextData;
+//             workingDirectory = Path.Combine(workspaceDir, workingDirectory ?? string.Empty);
 
 
-            string shell = null;
-            if (!Inputs.TryGetValue("shell", out shell) || string.IsNullOrEmpty(shell))
-            {
-                // TODO: figure out how defaults interact with template later
-                // for now, we won't check job.defaults if we are inside a template.
-                if (string.IsNullOrEmpty(ExecutionContext.ScopeName) && ExecutionContext.JobDefaults.TryGetValue("run", out var runDefaults))
-                {
-                    if (runDefaults.TryGetValue("shell", out shell))
-                    {
-                        ExecutionContext.Debug("Overwrite 'shell' base on job defaults.");
-                    }
-                }
-            }
+//             string shell = null;
+//             if (!Inputs.TryGetValue("shell", out shell) || string.IsNullOrEmpty(shell))
+//             {
+//                 // TODO: figure out how defaults interact with template later
+//                 // for now, we won't check job.defaults if we are inside a template.
+//                 if (string.IsNullOrEmpty(ExecutionContext.ScopeName) && ExecutionContext.JobDefaults.TryGetValue("run", out var runDefaults))
+//                 {
+//                     if (runDefaults.TryGetValue("shell", out shell))
+//                     {
+//                         ExecutionContext.Debug("Overwrite 'shell' base on job defaults.");
+//                     }
+//                 }
+//             }
 
-            var isContainerStepHost = StepHost is ContainerStepHost;
+//             var isContainerStepHost = StepHost is ContainerStepHost;
 
-            string prependPath = string.Join(Path.PathSeparator.ToString(), ExecutionContext.PrependPath.Reverse<string>());
-            string commandPath, argFormat, shellCommand;
+//             string prependPath = string.Join(Path.PathSeparator.ToString(), ExecutionContext.PrependPath.Reverse<string>());
+//             string commandPath, argFormat, shellCommand;
 
-            if (string.IsNullOrEmpty(shell))
-            {
-#if OS_WINDOWS
-                shellCommand = "pwsh";
-                commandPath = WhichUtil.Which(shellCommand, require: false, Trace, prependPath);
-                if (string.IsNullOrEmpty(commandPath))
-                {
-                    shellCommand = "powershell";
-                    Trace.Info($"Defaulting to {shellCommand}");
-                    commandPath = WhichUtil.Which(shellCommand, require: true, Trace, prependPath);
-                }
-                ArgUtil.NotNullOrEmpty(commandPath, "Default Shell");
-#else
-                shellCommand = "sh";
-                commandPath = WhichUtil.Which("bash", false, Trace, prependPath) ?? WhichUtil.Which("sh", true, Trace, prependPath);
-#endif
-                argFormat = ScriptHandlerHelpers.GetScriptArgumentsFormat(shellCommand);
-            }
-            else
-            {
-                var parsed = ScriptHandlerHelpers.ParseShellOptionString(shell);
-                shellCommand = parsed.shellCommand;
-                // For non-ContainerStepHost, the command must be located on the host by Which
-                commandPath = WhichUtil.Which(parsed.shellCommand, !isContainerStepHost, Trace, prependPath);
-                argFormat = $"{parsed.shellArgs}".TrimStart();
-                if (string.IsNullOrEmpty(argFormat))
-                {
-                    argFormat = ScriptHandlerHelpers.GetScriptArgumentsFormat(shellCommand);
-                }
-            }
+//             if (string.IsNullOrEmpty(shell))
+//             {
+// #if OS_WINDOWS
+//                 shellCommand = "pwsh";
+//                 commandPath = WhichUtil.Which(shellCommand, require: false, Trace, prependPath);
+//                 if (string.IsNullOrEmpty(commandPath))
+//                 {
+//                     shellCommand = "powershell";
+//                     Trace.Info($"Defaulting to {shellCommand}");
+//                     commandPath = WhichUtil.Which(shellCommand, require: true, Trace, prependPath);
+//                 }
+//                 ArgUtil.NotNullOrEmpty(commandPath, "Default Shell");
+// #else
+//                 shellCommand = "sh";
+//                 commandPath = WhichUtil.Which("bash", false, Trace, prependPath) ?? WhichUtil.Which("sh", true, Trace, prependPath);
+// #endif
+//                 argFormat = ScriptHandlerHelpers.GetScriptArgumentsFormat(shellCommand);
+//             }
+//             else
+//             {
+//                 var parsed = ScriptHandlerHelpers.ParseShellOptionString(shell);
+//                 shellCommand = parsed.shellCommand;
+//                 // For non-ContainerStepHost, the command must be located on the host by Which
+//                 commandPath = WhichUtil.Which(parsed.shellCommand, !isContainerStepHost, Trace, prependPath);
+//                 argFormat = $"{parsed.shellArgs}".TrimStart();
+//                 if (string.IsNullOrEmpty(argFormat))
+//                 {
+//                     argFormat = ScriptHandlerHelpers.GetScriptArgumentsFormat(shellCommand);
+//                 }
+//             }
 
-            // No arg format was given, shell must be a built-in
-            if (string.IsNullOrEmpty(argFormat) || !argFormat.Contains("{0}"))
-            {
-                throw new ArgumentException("Invalid shell option. Shell must be a valid built-in (bash, sh, cmd, powershell, pwsh) or a format string containing '{0}'");
-            }
+//             // No arg format was given, shell must be a built-in
+//             if (string.IsNullOrEmpty(argFormat) || !argFormat.Contains("{0}"))
+//             {
+//                 throw new ArgumentException("Invalid shell option. Shell must be a valid built-in (bash, sh, cmd, powershell, pwsh) or a format string containing '{0}'");
+//             }
 
-            // We do not not the full path until we know what shell is being used, so that we can determine the file extension
-            var scriptFilePath = Path.Combine(tempDirectory, $"{Guid.NewGuid()}{ScriptHandlerHelpers.GetScriptFileExtension(shellCommand)}");
-            var resolvedScriptPath = $"{StepHost.ResolvePathForStepHost(scriptFilePath).Replace("\"", "\\\"")}";
+//             // We do not not the full path until we know what shell is being used, so that we can determine the file extension
+//             var scriptFilePath = Path.Combine(tempDirectory, $"{Guid.NewGuid()}{ScriptHandlerHelpers.GetScriptFileExtension(shellCommand)}");
+//             var resolvedScriptPath = $"{StepHost.ResolvePathForStepHost(scriptFilePath).Replace("\"", "\\\"")}";
 
-            // Format arg string with script path
-            var arguments = string.Format(argFormat, resolvedScriptPath);
+//             // Format arg string with script path
+//             var arguments = string.Format(argFormat, resolvedScriptPath);
 
-            // Fix up and write the script
-            contents = ScriptHandlerHelpers.FixUpScriptContents(shellCommand, contents);
-#if OS_WINDOWS
-            // Normalize Windows line endings
-            contents = contents.Replace("\r\n", "\n").Replace("\n", "\r\n");
-            var encoding = ExecutionContext.Variables.Retain_Default_Encoding && Console.InputEncoding.CodePage != 65001
-                ? Console.InputEncoding
-                : new UTF8Encoding(false);
-#else
-            // Don't add a BOM. It causes the script to fail on some operating systems (e.g. on Ubuntu 14).
-            var encoding = new UTF8Encoding(false);
-#endif
-            // Script is written to local path (ie host) but executed relative to the StepHost, which may be a container
-            File.WriteAllText(scriptFilePath, contents, encoding);
+//             // Fix up and write the script
+//             contents = ScriptHandlerHelpers.FixUpScriptContents(shellCommand, contents);
+// #if OS_WINDOWS
+//             // Normalize Windows line endings
+//             contents = contents.Replace("\r\n", "\n").Replace("\n", "\r\n");
+//             var encoding = ExecutionContext.Variables.Retain_Default_Encoding && Console.InputEncoding.CodePage != 65001
+//                 ? Console.InputEncoding
+//                 : new UTF8Encoding(false);
+// #else
+//             // Don't add a BOM. It causes the script to fail on some operating systems (e.g. on Ubuntu 14).
+//             var encoding = new UTF8Encoding(false);
+// #endif
+//             // Script is written to local path (ie host) but executed relative to the StepHost, which may be a container
+//             File.WriteAllText(scriptFilePath, contents, encoding);
 
-            // Prepend PATH
-            AddPrependPathToEnvironment();
+//             // Prepend PATH
+//             AddPrependPathToEnvironment();
 
-            // expose context to environment
-            foreach (var context in ExecutionContext.ExpressionValues)
-            {
-                if (context.Value is IEnvironmentContextData runtimeContext && runtimeContext != null)
-                {
-                    foreach (var env in runtimeContext.GetRuntimeEnvironmentVariables())
-                    {
-                        Environment[env.Key] = env.Value;
-                    }
-                }
-            }
+//             // expose context to environment
+//             foreach (var context in ExecutionContext.ExpressionValues)
+//             {
+//                 if (context.Value is IEnvironmentContextData runtimeContext && runtimeContext != null)
+//                 {
+//                     foreach (var env in runtimeContext.GetRuntimeEnvironmentVariables())
+//                     {
+//                         Environment[env.Key] = env.Value;
+//                     }
+//                 }
+//             }
 
-            // dump out the command
-            var fileName = isContainerStepHost ? shellCommand : commandPath;
-#if OS_OSX
-            if (Environment.ContainsKey("DYLD_INSERT_LIBRARIES"))  // We don't check `isContainerStepHost` because we don't support container on macOS
-            {
-                // launch `node macOSRunInvoker.js shell args` instead of `shell args` to avoid macOS SIP remove `DYLD_INSERT_LIBRARIES` when launch process
-                string node12 = Path.Combine(HostContext.GetDirectory(WellKnownDirectory.Externals), "node12", "bin", $"node{IOUtil.ExeExtension}");
-                string macOSRunInvoker = Path.Combine(HostContext.GetDirectory(WellKnownDirectory.Bin), "macos-run-invoker.js");
-                arguments = $"\"{macOSRunInvoker.Replace("\"", "\\\"")}\" \"{fileName.Replace("\"", "\\\"")}\" {arguments}";
-                fileName = node12;
-            }
-#endif
-            ExecutionContext.Debug($"{fileName} {arguments}");
+//             // dump out the command
+//             var fileName = isContainerStepHost ? shellCommand : commandPath;
+// #if OS_OSX
+//             if (Environment.ContainsKey("DYLD_INSERT_LIBRARIES"))  // We don't check `isContainerStepHost` because we don't support container on macOS
+//             {
+//                 // launch `node macOSRunInvoker.js shell args` instead of `shell args` to avoid macOS SIP remove `DYLD_INSERT_LIBRARIES` when launch process
+//                 string node12 = Path.Combine(HostContext.GetDirectory(WellKnownDirectory.Externals), "node12", "bin", $"node{IOUtil.ExeExtension}");
+//                 string macOSRunInvoker = Path.Combine(HostContext.GetDirectory(WellKnownDirectory.Bin), "macos-run-invoker.js");
+//                 arguments = $"\"{macOSRunInvoker.Replace("\"", "\\\"")}\" \"{fileName.Replace("\"", "\\\"")}\" {arguments}";
+//                 fileName = node12;
+//             }
+// #endif
+//             ExecutionContext.Debug($"{fileName} {arguments}");
 
-            using (var stdoutManager = new OutputManager(ExecutionContext, ActionCommandManager))
-            using (var stderrManager = new OutputManager(ExecutionContext, ActionCommandManager))
-            {
-                StepHost.OutputDataReceived += stdoutManager.OnDataReceived;
-                StepHost.ErrorDataReceived += stderrManager.OnDataReceived;
+//             using (var stdoutManager = new OutputManager(ExecutionContext, ActionCommandManager))
+//             using (var stderrManager = new OutputManager(ExecutionContext, ActionCommandManager))
+//             {
+//                 StepHost.OutputDataReceived += stdoutManager.OnDataReceived;
+//                 StepHost.ErrorDataReceived += stderrManager.OnDataReceived;
 
-                // Execute
-                int exitCode = await StepHost.ExecuteAsync(workingDirectory: StepHost.ResolvePathForStepHost(workingDirectory),
-                                            fileName: fileName,
-                                            arguments: arguments,
-                                            environment: Environment,
-                                            requireExitCodeZero: false,
-                                            outputEncoding: null,
-                                            killProcessOnCancel: false,
-                                            inheritConsoleHandler: !ExecutionContext.Variables.Retain_Default_Encoding,
-                                            cancellationToken: ExecutionContext.CancellationToken);
+//                 // Execute
+//                 int exitCode = await StepHost.ExecuteAsync(workingDirectory: StepHost.ResolvePathForStepHost(workingDirectory),
+//                                             fileName: fileName,
+//                                             arguments: arguments,
+//                                             environment: Environment,
+//                                             requireExitCodeZero: false,
+//                                             outputEncoding: null,
+//                                             killProcessOnCancel: false,
+//                                             inheritConsoleHandler: !ExecutionContext.Variables.Retain_Default_Encoding,
+//                                             cancellationToken: ExecutionContext.CancellationToken);
 
-                // Error
-                if (exitCode != 0)
-                {
-                    ExecutionContext.Error($"Process completed with exit code {exitCode}.");
-                    ExecutionContext.Result = TaskResult.Failed;
-                }
-            }
+//                 // Error
+//                 if (exitCode != 0)
+//                 {
+//                     ExecutionContext.Error($"Process completed with exit code {exitCode}.");
+//                     ExecutionContext.Result = TaskResult.Failed;
+//                 }
+//             }
         }
 
     }
