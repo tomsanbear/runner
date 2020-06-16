@@ -178,7 +178,7 @@ namespace GitHub.Runner.Worker.Handlers
             // We add each step to JobSteps
             // First clear composite steps
             ExecutionContext.RemoveAllCompositeSteps();
-            foreach (Pipelines.Step aStep in actionSteps)
+            foreach (Pipelines.ActionStep aStep in actionSteps)
             {
                 // Set current step 
                 // This will basically let us recursively to go through each step
@@ -222,9 +222,15 @@ namespace GitHub.Runner.Worker.Handlers
                 // Basically we add to the list of steps that the steprunner has to process
                 // We should put it at the top of the list of steps because that's probably the 
                 // intention of the author to run the composed action first before the outer ones. 
+                // ^^^^
+                // 6/16/20
+                var actionRunner = HostContext.CreateService<IActionRunner>();
+                actionRunner.Action = aStep;
+                actionRunner.Stage = stage;
+                actionRunner.DisplayName = aStep.DisplayName;
 
                 // Copied from JobExtension since we don't want to add it as a post step
-                ExecutionContext.RegisterCompositeStep(aStep);
+                ExecutionContext.RegisterCompositeStep(actionRunner);
             }
             ExecutionContext.EnqueueAllCompositeSteps();
 
