@@ -266,13 +266,13 @@ namespace GitHub.DistributedTask.Pipelines.ObjectTemplating
         }
 
         //Note: originally was List<Step> but we need to change to List<ActionStep> to use the "Inputs" attribute
-        internal static List<ActionStep> ConvertToSteps(
+        internal static List<Step> ConvertToSteps(
             TemplateContext context,
             TemplateToken steps)
         {
             var stepsSequence = steps.AssertSequence($"job {PipelineTemplateConstants.Steps}");
 
-            var result = new List<ActionStep>();
+            var result = new List<Step>();
             foreach (var stepsItem in stepsSequence)
             {
                 var step = ConvertToStep(context, stepsItem);

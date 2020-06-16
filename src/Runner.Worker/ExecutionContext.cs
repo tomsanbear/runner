@@ -68,6 +68,9 @@ namespace GitHub.Runner.Worker
         // Only job level ExecutionContext has PostJobSteps
         Stack<IStep> PostJobSteps { get; }
 
+        // Composite Action Steps
+        public Queue<IStep> CompositeActionSteps { get; }
+
         bool EchoOnActionCommand { get; set; }
 
         // Initialize
@@ -105,6 +108,12 @@ namespace GitHub.Runner.Worker
         // others
         void ForceTaskComplete();
         void RegisterPostJobStep(IStep step);
+
+        void RegisterCompositeStep(IStep step);
+
+        void EnqueueAllCompositeSteps();
+
+        void RemoveAllCompositeSteps();
     }
 
     public sealed class ExecutionContext : RunnerService, IExecutionContext
@@ -166,6 +175,9 @@ namespace GitHub.Runner.Worker
 
         // Only job level ExecutionContext has StepsWithPostRegistered
         public HashSet<Guid> StepsWithPostRegistered { get; private set; }
+
+        // Composite Action Steps
+        public Queue<IStep> CompositeActionSteps { get; private set; }
 
         public bool EchoOnActionCommand { get; set; }
 
@@ -263,6 +275,61 @@ namespace GitHub.Runner.Worker
 
             step.ExecutionContext = Root.CreatePostChild(step.DisplayName, IntraActionState);
             Root.PostJobSteps.Push(step);
+        }
+
+        /*
+            RegisterCompositeStep is a helper function used in CompositeActionHandler::RunAsync to 
+            add a child node, aka a step, to the current job to the front of the queue for processing. 
+        */
+        public void RegisterCompositeStep(IStep step) 
+        {
+            // Set IntraActionState as null for now
+            Trace.Info("Adding Composite Action Step");
+
+            // Experimenting with using something else besides Root to condense in the right format for the UI
+            // Maybe we can add to the current JobSteps context
+            // We want to condense all of the composite steps in the "Run ___composite_____" section
+            // orignally: Root.CreateChild(
+            // How do we get all the correct info?
+            var newGuid = Guid.NewGuid();
+            // TODO: ADD record info (last parameter of CreateChild())
+            step.ExecutionContext = this.CreateChild(
+                newGuid, step.DisplayName, newGuid.ToString("N"), null, null, IntraActionState);
+                
+            // ~Brute Force Method~
+            // There is no way to put this current job in front of the queue in < O(n) time where n = # of elements in Root.JobSteps
+            // You could create another Stack that keeps track of the Composite Action steps
+            // but we would have to requeue every item to put those steps from that stack in Root.JobSteps which would result in 
+            // O(n) for each time we add a composite action step where n = number of jobSteps which would compound 
+            // to O(n*m) where m = number of composite steps
+            // We can optimize support for adding composite steps by refactoring Root.JobSteps to a PriorityQueue
+            // Thus, we will use this temporarily workaround to add the step to the front of the queue
+            // var temp = Root.JobSteps.ToArray();
+            // Root.JobSteps.Clear();
+            // Root.JobSteps.Enqueue(step);
+            // foreach(var s in temp)
+            //     Root.JobSteps.Enqueue(s);
+
+            // ~Optimized Method~
+            // Alterative solution: We add to another temp Queue
+            // After we add all composite steps to this temp queue, we requeue the whole JobSteps accordingly in another function
+            // This will take only O(n+m) time which would be just as efficient if we refactored the code of JobSteps to a PriorityQueue
+            this.CompositeActionSteps.Enqueue(step);
+        }
+
+        // Add Composite Steps first and then requeue the rest of the job steps. 
+        public void EnqueueAllCompositeSteps()  {
+            var temp = this.JobSteps.ToArray();
+            this.JobSteps.Clear();
+            foreach(var cs in this.CompositeActionSteps)
+                this.JobSteps.Enqueue(cs);
+            foreach(var s in temp)
+                this.JobSteps.Enqueue(s);
+        }
+
+        // Remove all Composite Steps
+        public void RemoveAllCompositeSteps() {
+            this.CompositeActionSteps.Clear();
         }
 
         public IExecutionContext CreateChild(Guid recordId, string displayName, string refName, string scopeName, string contextName, Dictionary<string, string> intraActionState = null, int? recordOrder = null)

@@ -1287,7 +1287,7 @@ namespace GitHub.Runner.Worker
         public override bool HasPre => false;
         public override bool HasPost => false;
 
-        public List<Pipelines.ActionStep> Steps {get; set;}
+        public List<IStep> Steps {get; set;}
 
         // Could I add a reference to the ActionRunner we are using here?
 

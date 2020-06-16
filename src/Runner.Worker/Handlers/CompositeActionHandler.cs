@@ -166,16 +166,19 @@ namespace GitHub.Runner.Worker.Handlers
             var actionSteps = Data.Steps;
 
             // if (Data.End == True)
-            if (actionSteps == null) {
+            if (actionSteps == null)
+            {
                 Trace.Error("Data.Steps in CompositeActionHandler is null");
-            } else {
+            }
+            else
+            {
                 Trace.Info($"Data Steps Value for Composite Actions is: {actionSteps}.");
             }
 
-            // For each action step, we call ActionRunner::RunAsync()
-            // How do we get the correct instance of the ActionRunner tho.
-            // ^ We can just pass it to our ExecutionContext!!
-            foreach (Pipelines.ActionStep aStep in actionSteps) 
+            // We add each step to JobSteps
+            // First clear composite steps
+            ExecutionContext.RemoveAllCompositeSteps();
+            foreach (Pipelines.Step aStep in actionSteps)
             {
                 // Set current step 
                 // This will basically let us recursively to go through each step
@@ -184,7 +187,7 @@ namespace GitHub.Runner.Worker.Handlers
                 //          Since this will recursively call RunAsync(), when we recurse back, we'll get the correct "Current Step" to run
                 // Ex: 
                 // 
-                // runs:
+                // runs:å
                 //      using: "composite"
                 //      steps:
                 //          - uses: example/test-composite@v2 (a)
@@ -215,18 +218,29 @@ namespace GitHub.Runner.Worker.Handlers
 
                 // 6/15/20 TODO:
                 // Replicate behavior for adding post steps in ActionRunner.cs (line 94)
+                // Make sure that we explicitly add a script step. 
+                // Basically we add to the list of steps that the steprunner has to process
+                // We should put it at the top of the list of steps because that's probably the 
+                // intention of the author to run the composed action first before the outer ones. 
 
-                
+                // Copied from JobExtension since we don't want to add it as a post step
+                ExecutionContext.RegisterCompositeStep(aStep);
             }
+            ExecutionContext.EnqueueAllCompositeSteps();
+
+            // Do we need to run anything here below?
+
+
+
 
             // Wait, I don't think we need to do anything after the for loop lol because the processing should handle itself and eventually run the 
             // ScriptHandler
 
             // WE WANT TO EVENTUALLY GET RID OF ALL THE LOGIC BELOW AND JUST CALL SCRIPTHANDLER FOR THE RUN STUFF
-            
+
 
             // If the for loop has ended, that means we want to process the current step to eventually return back up recursively
-            var runStepInputs = ExecutionContext.CurrentActionStep.Inputs;
+            // var runStepInputs = ExecutionContext.CurrentActionStep.Inputs;
 
 
 
@@ -242,9 +256,12 @@ namespace GitHub.Runner.Worker.Handlers
             // Then what is called when we process each step? if ConvertRuns is not called
             // ^
             var runValue = "";
-            if (runStepInputs == null) {
+            if (runStepInputs == null)
+            {
                 Trace.Error("runStepInputs in CompositeActionHandler is null");
-            } else {
+            }
+            else
+            {
                 Trace.Info($"runStepInputs Value for Composite Actions is: {runStepInputs}.");
             }
             var templateEvaluator = ExecutionContext.ToPipelineTemplateEvaluator();

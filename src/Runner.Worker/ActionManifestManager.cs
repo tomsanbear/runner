@@ -320,7 +320,7 @@ namespace GitHub.Runner.Worker
             // Actually, not sure, let's just set it to MappingToken since AssertMapping("steps") 
             // returns a MappingToken
             // var stepsToken = default(SequenceToken);
-            var stepsLoaded = default(List<ActionStep>);
+            var stepsLoaded = default(List<Step>);
 
             // It should be a array (aka sequence)
 
