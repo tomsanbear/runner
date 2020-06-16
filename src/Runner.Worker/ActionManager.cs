@@ -395,7 +395,8 @@ namespace GitHub.Runner.Worker
                             Trace.Info($"Action cleanup plugin: {plugin.PluginTypeName}.");
                         }
                     }
-                    else if (definition.Data.Execution.ExecutionType == ActionExecutionType.Composite && !String.IsNullOrEmpty(Environment.GetEnvironmentVariable("TESTING_COMPOSITE_ACTIONS_ALPHA"))) {
+                    else if (definition.Data.Execution.ExecutionType == ActionExecutionType.Composite && !String.IsNullOrEmpty(Environment.GetEnvironmentVariable("TESTING_COMPOSITE_ACTIONS_ALPHA")))
+                    {
                         // Don't do anything for now
                     }
                     else
@@ -1107,7 +1108,7 @@ namespace GitHub.Runner.Worker
                 else if (actionDefinitionData.Execution.ExecutionType == ActionExecutionType.Composite && !String.IsNullOrEmpty(Environment.GetEnvironmentVariable("TESTING_COMPOSITE_ACTIONS_ALPHA")))
                 {
                     // Trace.Info($"Action composite: {(actionDefinitionData.Execution as CompositeActionExecutionData).Unknown}, no more preparation.");
-                    
+
                     return null;
                 }
                 else
@@ -1287,7 +1288,7 @@ namespace GitHub.Runner.Worker
         public override bool HasPre => false;
         public override bool HasPost => false;
 
-        public List<Pipelines.ActionStep> Steps {get; set;}
+        public List<Pipelines.ActionStep> Steps { get; set; }
 
         // Could I add a reference to the ActionRunner we are using here?
 

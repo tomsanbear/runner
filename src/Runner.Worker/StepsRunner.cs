@@ -67,7 +67,7 @@ namespace GitHub.Runner.Worker
 
                 var step = jobContext.JobSteps.Dequeue();
                 var nextStep = jobContext.JobSteps.Count > 0 ? jobContext.JobSteps.Peek() : null;
-                // TODO: Fix this
+                // TODO: Fix this temporary workaround
                 nextStep = null;
 
                 Trace.Info($"Processing step: DisplayName='{step.DisplayName}'");
@@ -415,6 +415,8 @@ namespace GitHub.Runner.Worker
                     scope = scopesToInitialize.Pop();
                     executionContext.Debug($"Initializing scope '{scope.Name}'");
                     executionContext.ExpressionValues["steps"] = stepsContext.GetScope(scope.ParentName);
+                    // Temp fix to prevent the StepsRunner from overwriting inputs for CompositeActions
+                    // TODO: Fix this temporary workaround
                     if (!executionContext.ExpressionValues.ContainsKey("inputs")) {
                         executionContext.ExpressionValues["inputs"] = !String.IsNullOrEmpty(scope.ParentName) ? scopeInputs[scope.ParentName] : null;
                     }
@@ -440,7 +442,11 @@ namespace GitHub.Runner.Worker
             // Setup expression values
             var scopeName = executionContext.ScopeName;
             executionContext.ExpressionValues["steps"] = stepsContext.GetScope(scopeName);
-            executionContext.ExpressionValues["inputs"] = string.IsNullOrEmpty(scopeName) ? null : scopeInputs[scopeName];
+            // Temp fix to prevent the StepsRunner from overwriting inputs for CompositeActions
+            // TODO: Fix this temporary workaround
+            if (!executionContext.ExpressionValues.ContainsKey("inputs")) {
+                executionContext.ExpressionValues["inputs"] = string.IsNullOrEmpty(scopeName) ? null : scopeInputs[scopeName];
+            }
 
             return true;
         }
