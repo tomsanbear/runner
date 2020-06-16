@@ -60,7 +60,9 @@ namespace GitHub.Runner.Worker.Handlers
 
             // We add each step to JobSteps
             // First clear composite steps
-            ExecutionContext.RemoveAllCompositeSteps();
+            ExecutionContext.NewCompositeSteps();
+
+            // TODO: Convert ExecutionContext.CompositeActionSteps to simple local variable
             foreach (Pipelines.ActionStep aStep in actionSteps)
             {
                 // Set current step 
@@ -110,10 +112,13 @@ namespace GitHub.Runner.Worker.Handlers
                 var actionRunner = HostContext.CreateService<IActionRunner>();
                 actionRunner.Action = aStep;
                 actionRunner.Stage = stage;
+                actionRunner.Condition = aStep.Condition;
                 actionRunner.DisplayName = aStep.DisplayName;
+                // TODO: Do we need to add any context data from the job message?
+                // (See JobExtension.cs ~line 236)
 
                 // Copied from JobExtension since we don't want to add it as a post step
-                ExecutionContext.RegisterCompositeStep(actionRunner);
+                ExecutionContext.RegisterCompositeStep(actionRunner, Inputs);
             }
             ExecutionContext.EnqueueAllCompositeSteps();
 

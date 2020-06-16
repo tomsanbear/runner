@@ -67,6 +67,8 @@ namespace GitHub.Runner.Worker
 
                 var step = jobContext.JobSteps.Dequeue();
                 var nextStep = jobContext.JobSteps.Count > 0 ? jobContext.JobSteps.Peek() : null;
+                // TODO: Fix this
+                nextStep = null;
 
                 Trace.Info($"Processing step: DisplayName='{step.DisplayName}'");
                 ArgUtil.NotNull(step.ExecutionContext, nameof(step.ExecutionContext));
@@ -413,7 +415,9 @@ namespace GitHub.Runner.Worker
                     scope = scopesToInitialize.Pop();
                     executionContext.Debug($"Initializing scope '{scope.Name}'");
                     executionContext.ExpressionValues["steps"] = stepsContext.GetScope(scope.ParentName);
-                    executionContext.ExpressionValues["inputs"] = !String.IsNullOrEmpty(scope.ParentName) ? scopeInputs[scope.ParentName] : null;
+                    if (!executionContext.ExpressionValues.ContainsKey("inputs")) {
+                        executionContext.ExpressionValues["inputs"] = !String.IsNullOrEmpty(scope.ParentName) ? scopeInputs[scope.ParentName] : null;
+                    }
                     var templateEvaluator = executionContext.ToPipelineTemplateEvaluator();
                     var inputs = default(DictionaryContextData);
                     try

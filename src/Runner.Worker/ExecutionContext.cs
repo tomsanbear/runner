@@ -69,7 +69,7 @@ namespace GitHub.Runner.Worker
         Stack<IStep> PostJobSteps { get; }
 
         // Composite Action Steps
-        public Queue<IStep> CompositeActionSteps { get; }
+        public Queue<IStep> CompositeActionSteps { get; set; }
 
         bool EchoOnActionCommand { get; set; }
 
@@ -109,11 +109,11 @@ namespace GitHub.Runner.Worker
         void ForceTaskComplete();
         void RegisterPostJobStep(IStep step);
 
-        void RegisterCompositeStep(IStep step);
+        void RegisterCompositeStep(IStep step, Dictionary<string, string> inputs);
 
         void EnqueueAllCompositeSteps();
 
-        void RemoveAllCompositeSteps();
+        void NewCompositeSteps();
     }
 
     public sealed class ExecutionContext : RunnerService, IExecutionContext
@@ -177,7 +177,7 @@ namespace GitHub.Runner.Worker
         public HashSet<Guid> StepsWithPostRegistered { get; private set; }
 
         // Composite Action Steps
-        public Queue<IStep> CompositeActionSteps { get; private set; }
+        public Queue<IStep> CompositeActionSteps { get; set; }
 
         public bool EchoOnActionCommand { get; set; }
 
@@ -281,7 +281,7 @@ namespace GitHub.Runner.Worker
             RegisterCompositeStep is a helper function used in CompositeActionHandler::RunAsync to 
             add a child node, aka a step, to the current job to the front of the queue for processing. 
         */
-        public void RegisterCompositeStep(IStep step) 
+        public void RegisterCompositeStep(IStep step, Dictionary<string, string> inputs)
         {
             // Set IntraActionState as null for now
             Trace.Info("Adding Composite Action Step");
@@ -293,9 +293,18 @@ namespace GitHub.Runner.Worker
             // How do we get all the correct info?
             var newGuid = Guid.NewGuid();
             // TODO: ADD record info (last parameter of CreateChild())
-            step.ExecutionContext = this.CreateChild(
-                newGuid, step.DisplayName, newGuid.ToString("N"), null, null, IntraActionState);
-                
+            // maybe change to "this" for current node
+            // Replace "TESTING" to step.DisplayName
+            step.ExecutionContext = Root.CreateChild(
+                newGuid, step.DisplayName, newGuid.ToString("N"), null, null);
+            
+            // Convert Dictionary Context data
+            var inputsData = new DictionaryContextData();
+            foreach (var i in inputs) {
+                inputsData[i.Key] = new StringContextData(i.Value);
+            }
+            step.ExecutionContext.ExpressionValues["inputs"] = inputsData;
+
             // ~Brute Force Method~
             // There is no way to put this current job in front of the queue in < O(n) time where n = # of elements in Root.JobSteps
             // You could create another Stack that keeps track of the Composite Action steps
@@ -314,22 +323,66 @@ namespace GitHub.Runner.Worker
             // Alterative solution: We add to another temp Queue
             // After we add all composite steps to this temp queue, we requeue the whole JobSteps accordingly in another function
             // This will take only O(n+m) time which would be just as efficient if we refactored the code of JobSteps to a PriorityQueue
+
             this.CompositeActionSteps.Enqueue(step);
         }
 
         // Add Composite Steps first and then requeue the rest of the job steps. 
-        public void EnqueueAllCompositeSteps()  {
-            var temp = this.JobSteps.ToArray();
-            this.JobSteps.Clear();
-            foreach(var cs in this.CompositeActionSteps)
-                this.JobSteps.Enqueue(cs);
-            foreach(var s in temp)
-                this.JobSteps.Enqueue(s);
+        public void EnqueueAllCompositeSteps()
+        {
+
+            // if (this.JobSteps != null)
+            // {
+            //     var temp = this.JobSteps.ToArray();
+            //     this.JobSteps.Clear();
+            //     foreach (var cs in this.CompositeActionSteps)
+            //     {
+            //         Trace.Info($"EnqueueAllCompositeSteps : Adding Composite action step {cs}");
+            //         this.JobSteps.Enqueue(cs);
+            //     }
+            //     foreach (var s in temp)
+            //     {
+            //         this.JobSteps.Enqueue(s);
+            //     }
+            // }
+            // else
+            // {
+            //     this.JobSteps = new Queue<IStep>();
+            //     foreach (var cs in this.CompositeActionSteps)
+            //     {
+            //         Trace.Info($"EnqueueAllCompositeSteps : Adding Composite action step {cs}");
+            //         this.JobSteps.Enqueue(cs);
+            //     }
+            // }
+            if (Root.JobSteps != null)
+            {
+                var temp = Root.JobSteps.ToArray();
+                Root.JobSteps.Clear();
+                foreach (var cs in this.CompositeActionSteps)
+                {
+                    Trace.Info($"EnqueueAllCompositeSteps : Adding Composite action step {cs}");
+                    Root.JobSteps.Enqueue(cs);
+                }
+                foreach (var s in temp)
+                {
+                    Root.JobSteps.Enqueue(s);
+                }
+            }
+            else
+            {
+                Root.JobSteps = new Queue<IStep>();
+                foreach (var cs in Root.CompositeActionSteps)
+                {
+                    Trace.Info($"EnqueueAllCompositeSteps : Adding Composite action step {cs}");
+                    Root.JobSteps.Enqueue(cs);
+                }
+            }
         }
 
-        // Remove all Composite Steps
-        public void RemoveAllCompositeSteps() {
-            this.CompositeActionSteps.Clear();
+        // Remove all Composite Steps and Start a New List of Steps
+        public void NewCompositeSteps()
+        {
+            this.CompositeActionSteps = new Queue<IStep>();
         }
 
         public IExecutionContext CreateChild(Guid recordId, string displayName, string refName, string scopeName, string contextName, Dictionary<string, string> intraActionState = null, int? recordOrder = null)

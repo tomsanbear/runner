@@ -42,7 +42,7 @@ namespace GitHub.DistributedTask.ObjectTemplating
         {
             for (int i = 0; i < 50; i++)
             {
-                String message = !String.IsNullOrEmpty(messagePrefix) ? $"{messagePrefix} {ex.Message}" : ex.ToString();
+                String message = !String.IsNullOrEmpty(messagePrefix) ? $"{messagePrefix} {ex.ToString()}" : ex.ToString();
                 Add(new TemplateValidationError(message));
                 if (ex.InnerException == null)
                 {

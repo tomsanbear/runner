@@ -382,8 +382,12 @@ namespace GitHub.Runner.Worker
                         // Call load steps here
                         // var test = new PipelineTemplateEvaluator();
                         var evaluator = executionContext.ToPipelineTemplateEvaluator();
-                        stepsLoaded = evaluator.LoadSteps(steps, null, null);
+                        stepsLoaded = evaluator.LoadCompositeSteps(steps, null, null);
                         break;
+                        // TODO: We need to line up the File Table 
+                        // If there is an error loading the step, it will say "It failed: line, col"
+                        // ^ If it fails later (ex: if we have an expression), then we need
+                        //      to preserve the file name correctly.
                     default:
                         Trace.Info($"Ignore run property {runsKey}.");
                         break;

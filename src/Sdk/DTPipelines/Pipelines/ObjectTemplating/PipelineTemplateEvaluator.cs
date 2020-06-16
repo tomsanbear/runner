@@ -162,7 +162,7 @@ namespace GitHub.DistributedTask.Pipelines.ObjectTemplating
         // TODO: Add function here that says Evaluate Steps but it will return whatever ConvertToSteps returns.
         // return: List<ActionStep>
         // used to be evaluatesteps
-        public List<ActionStep> LoadSteps(
+        public List<ActionStep> LoadCompositeSteps(
             TemplateToken token,
             DictionaryContextData contextData,
             IList<IFunctionInfo> expressionFunctions
@@ -181,7 +181,7 @@ namespace GitHub.DistributedTask.Pipelines.ObjectTemplating
 
                 try
                 {
-                    token = TemplateEvaluator.Evaluate(context, PipelineTemplateConstants.Steps, token, 0, null, omitHeader: true);
+                    token = TemplateEvaluator.Evaluate(context, PipelineTemplateConstants.StepsInTemplate, token, 0, null, omitHeader: true);
                     context.Errors.Check();
                     result = PipelineTemplateConverter.ConvertToSteps(context, token);
                 }

@@ -85,28 +85,29 @@
             }
         },
         "composite-runs": {
-            "mapping" : {
+            "mapping": {
                 "properties": {
                     "using": "non-empty-string",
-                    "steps": "steps"
+                    "steps": "composite-steps"
                 }
             }
         },
-        "steps": {
+        "composite-steps": {
+            "context": [
+                "github",
+                "needs",
+                "strategy",
+                "matrix",
+                "secrets",
+                "steps",
+                "inputs",
+                "job",
+                "runner",
+                "env",
+                "hashFiles(1,255)"
+            ],
             "sequence": {
-                "item-type": "steps-item"
-            }
-        },
-        "steps-item": {
-            "one-of": [
-                "run-step"
-            ]
-        },
-        "run-step": {
-            "mapping": {
-              "properties": {
-                "run": "non-empty-string"
-              }
+                "item-type": "any"
             }
         },
         "container-runs-context": {

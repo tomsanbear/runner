@@ -157,6 +157,15 @@ namespace GitHub.DistributedTask.ObjectTemplating.Tokens
                 {
                     MaxMemory = context.Memory.MaxBytes,
                 };
+                if (context == null) {
+                    throw new Exception("context is null");
+                }
+                if (context.TraceWriter == null) {
+                    throw new Exception("context.TraceWriter is null");
+                }
+                if (tree == null) {
+                    throw new Exception("treee is null");
+                }
                 var result = tree.Evaluate(context.TraceWriter.ToExpressionTraceWriter(), null, context, options);
                 return ConvertToTemplateToken(context, result);
             }
