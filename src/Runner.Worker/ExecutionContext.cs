@@ -68,9 +68,6 @@ namespace GitHub.Runner.Worker
         // Only job level ExecutionContext has PostJobSteps
         Stack<IStep> PostJobSteps { get; }
 
-        // Composite Action Steps
-        public Queue<IStep> CompositeActionSteps { get; set; }
-
         bool EchoOnActionCommand { get; set; }
 
         // Initialize
@@ -109,11 +106,10 @@ namespace GitHub.Runner.Worker
         void ForceTaskComplete();
         void RegisterPostJobStep(IStep step);
 
-        void RegisterCompositeStep(IStep step, Dictionary<string, string> inputs);
+        IStep RegisterCompositeStep(IStep step, Dictionary<string, string> inputs);
 
-        void EnqueueAllCompositeSteps();
+        void EnqueueAllCompositeSteps(Queue<IStep> steps);
 
-        void NewCompositeSteps();
     }
 
     public sealed class ExecutionContext : RunnerService, IExecutionContext
@@ -175,9 +171,6 @@ namespace GitHub.Runner.Worker
 
         // Only job level ExecutionContext has StepsWithPostRegistered
         public HashSet<Guid> StepsWithPostRegistered { get; private set; }
-
-        // Composite Action Steps
-        public Queue<IStep> CompositeActionSteps { get; set; }
 
         public bool EchoOnActionCommand { get; set; }
 
@@ -281,7 +274,7 @@ namespace GitHub.Runner.Worker
             RegisterCompositeStep is a helper function used in CompositeActionHandler::RunAsync to 
             add a child node, aka a step, to the current job to the front of the queue for processing. 
         */
-        public void RegisterCompositeStep(IStep step, Dictionary<string, string> inputs)
+        public IStep RegisterCompositeStep(IStep step, Dictionary<string, string> inputs)
         {
             // Set IntraActionState as null for now
             Trace.Info("Adding Composite Action Step");
@@ -323,42 +316,21 @@ namespace GitHub.Runner.Worker
             // Alterative solution: We add to another temp Queue
             // After we add all composite steps to this temp queue, we requeue the whole JobSteps accordingly in another function
             // This will take only O(n+m) time which would be just as efficient if we refactored the code of JobSteps to a PriorityQueue
+            // UPDATE: we create new queue in CompositeActionHandler::RunAsync now
 
-            this.CompositeActionSteps.Enqueue(step);
+            return step;
         }
 
         // Add Composite Steps first and then requeue the rest of the job steps. 
-        public void EnqueueAllCompositeSteps()
+        public void EnqueueAllCompositeSteps(Queue<IStep> steps)
         {
 
-            // if (this.JobSteps != null)
-            // {
-            //     var temp = this.JobSteps.ToArray();
-            //     this.JobSteps.Clear();
-            //     foreach (var cs in this.CompositeActionSteps)
-            //     {
-            //         Trace.Info($"EnqueueAllCompositeSteps : Adding Composite action step {cs}");
-            //         this.JobSteps.Enqueue(cs);
-            //     }
-            //     foreach (var s in temp)
-            //     {
-            //         this.JobSteps.Enqueue(s);
-            //     }
-            // }
-            // else
-            // {
-            //     this.JobSteps = new Queue<IStep>();
-            //     foreach (var cs in this.CompositeActionSteps)
-            //     {
-            //         Trace.Info($"EnqueueAllCompositeSteps : Adding Composite action step {cs}");
-            //         this.JobSteps.Enqueue(cs);
-            //     }
-            // }
+            // Alternative solution for condensing to node is using "this" instead of "Root"
             if (Root.JobSteps != null)
             {
                 var temp = Root.JobSteps.ToArray();
                 Root.JobSteps.Clear();
-                foreach (var cs in this.CompositeActionSteps)
+                foreach (var cs in steps)
                 {
                     Trace.Info($"EnqueueAllCompositeSteps : Adding Composite action step {cs}");
                     Root.JobSteps.Enqueue(cs);
@@ -371,18 +343,12 @@ namespace GitHub.Runner.Worker
             else
             {
                 Root.JobSteps = new Queue<IStep>();
-                foreach (var cs in Root.CompositeActionSteps)
+                foreach (var cs in steps)
                 {
                     Trace.Info($"EnqueueAllCompositeSteps : Adding Composite action step {cs}");
                     Root.JobSteps.Enqueue(cs);
                 }
             }
-        }
-
-        // Remove all Composite Steps and Start a New List of Steps
-        public void NewCompositeSteps()
-        {
-            this.CompositeActionSteps = new Queue<IStep>();
         }
 
         public IExecutionContext CreateChild(Guid recordId, string displayName, string refName, string scopeName, string contextName, Dictionary<string, string> intraActionState = null, int? recordOrder = null)

@@ -60,9 +60,10 @@ namespace GitHub.Runner.Worker.Handlers
 
             // We add each step to JobSteps
             // First clear composite steps
-            ExecutionContext.NewCompositeSteps();
+            // ExecutionContext.NewCompositeSteps();
 
             // TODO: Convert ExecutionContext.CompositeActionSteps to simple local variable
+            var compositeActionSteps = new Queue<IStep>();
             foreach (Pipelines.ActionStep aStep in actionSteps)
             {
                 // Set current step 
@@ -118,9 +119,9 @@ namespace GitHub.Runner.Worker.Handlers
                 // (See JobExtension.cs ~line 236)
 
                 // Copied from JobExtension since we don't want to add it as a post step
-                ExecutionContext.RegisterCompositeStep(actionRunner, Inputs);
+                compositeActionSteps.Enqueue(ExecutionContext.RegisterCompositeStep(actionRunner, Inputs));
             }
-            ExecutionContext.EnqueueAllCompositeSteps();
+            ExecutionContext.EnqueueAllCompositeSteps(compositeActionSteps);
 
             // Do we need to run anything here below?
 
