@@ -37,6 +37,11 @@ namespace GitHub.Runner.Listener
             context.WritePerfCounter("RunnerProcessStarted");
             var terminal = context.GetService<ITerminal>();
 
+            if (Environment.GetEnvironmentVariable("DISABLE_UPDATES").Equals("1"))
+            {
+                terminal.WriteLine("!!! Updates are disabled, ignoring update requests !!!");
+            }
+
             // Validate the binaries intended for one OS are not running on a different OS.
             switch (Constants.Runner.Platform)
             {

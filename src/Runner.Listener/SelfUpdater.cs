@@ -51,6 +51,11 @@ namespace GitHub.Runner.Listener
             Busy = true;
             try
             {
+                if (Environment.GetEnvironmentVariable("DISABLE_UPDATES").Equals("1"))
+                {
+                    Trace.Info($"Updates are disabled, ignoring update request.");
+                    return false;
+                }
                 if (!await UpdateNeeded(updateMessage.TargetVersion, token))
                 {
                     Trace.Info($"Can't find available update package.");
